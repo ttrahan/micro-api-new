@@ -8,15 +8,29 @@ node_js:
 env:
     - XUNIT_FILE=./shippable/testresults/result.xml API_PORT=3001
 
-before_install:
-    - node --version
+build:
+  pre_ci:
+    - docker build -t ttrahan/micro-api-new .
+  pre_ci_boot:
+    - image_name: ttrahan/micro-api-new
+    - image_tag: latest
+    - pull: false
+  ci:
+    - pwd
+    - ls -al
     - mkdir -p ./shippable/testresults
     - mkdir -p ./shippable/codecoverage
-
-script:
+#    - npm install --save-dev
     - grunt
-
-after_script:
     - ./node_modules/.bin/istanbul cover grunt -- -u tdd
-    - ./node_modules/.bin/istanbul report cobertura --dir  ./shippable/codecoverage/
+    - ./node_modules/.bin/istanbul report cobertura --dir ./shippable/codecoverage
     - echo $BUILD_NUMBER > ~/buildConfig.txt
+  post_ci:
+    - docker push ttrahan/micro-api-new:$BRANCH.$BUILD_NUMBER
+
+integrations:
+  - integrationName: "Docker Hub"
+    type: docker
+    branches:
+      only:
+          - master

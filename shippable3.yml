@@ -1,0 +1,29 @@
+# language setting
+language: node_js
+
+# version numbers, testing against one version of node
+node_js:
+    - 0.10.33
+    - 0.12
+
+env:
+    - XUNIT_FILE=./shippable/testresults/result.xml API_PORT=3001
+
+build:
+    pre_ci:
+      - docker build -t test/micro-api .
+    pre_ci_boot:
+      image_name: test/micro-api
+      image_tag: latest
+      pull: false
+    ci:
+      - pwd
+      - ls -al
+      - node --version
+      - mkdir -p ./shippable/testresults
+      - mkdir -p ./shippable/codecoverage
+      - npm install --save-dev
+      - grunt
+      - ./node_modules/.bin/istanbul cover grunt -- -u tdd
+      - ./node_modules/.bin/istanbul report cobertura --dir  ./shippable/codecoverage/
+      - echo $BUILD_NUMBER > ~/buildConfig.txt
